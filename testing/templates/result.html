@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Результаты теста{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %} text-white">
+                <h2 class="mb-0">Результаты теста</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h4>{{ test.title }}</h4>
+                        <p><strong>Студент:</strong> {{ student.name }}</p>
+                        <p><strong>Email:</strong> {{ student.email }}</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h3>Ваш результат: <span class="badge {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ attempt.score|floatformat:1 }}%
+                        </span></h3>
+                        <p>Проходной балл: {{ test.passing_threshold }}%</p>
+                    </div>
+                </div>
+
+                <div class="alert {% if attempt.passed %}alert-success{% else %}alert-danger{% endif %}" role="alert">
+                    <h4 class="alert-heading">
+                        {% if attempt.passed %}
+                        ✅ Поздравляем! Вы прошли тест!
+                        {% else %}
+                        ❌ К сожалению, тест не пройден
+                        {% endif %}
+                    </h4>
+                    <p class="mb-0">
+                        {% if attempt.passed %}
+                        Вы набрали достаточное количество баллов. С вами свяжутся для дальнейших шагов.
+                        {% else %}
+                        Вы не набрали достаточное количество баллов. Попробуйте улучшить свои знания и пройдите тест снова.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <h5 class="mb-3">Детальные результаты:</h5>
+
+                {% for answer in answers %}
+                <div class="card mb-3 {% if answer.is_correct %}border-success{% else %}border-danger{% endif %}">
+                    <div class="card-header {% if answer.is_correct %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                        <strong>Вопрос {{ answer.question.order_number }}:</strong> {{ answer.question.question_text }}
+                        <span class="float-end">
+                            {% if answer.is_correct %}✅{% else %}❌{% endif %}
+                            {{ answer.points_earned }}/{{ answer.question.points }} балл.
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        {% with sa=answer.student_answer ca=answer.question.correct_answer %}
+                        {% if answer.question.question_type == 'single_choice' %}
+                            <p><strong>Ваш ответ:</strong> {{ sa.answer }}</p>
+                            {% if not answer.is_correct %}
+                                <p class="text-danger"><strong>Правильный ответ:</strong> {{ ca.answer }}</p>
+                            {% endif %}
+                        {% elif answer.question.question_type == 'multiple_choice' %}
+                            <p><strong>Ваш ответ:</strong> {{ sa.answers|join:", " }}</p>
+                            {% if not answer.is_correct %}
+                                <p class="text-danger"><strong>Правильный ответ:</strong> {{ ca.answers|join:", " }}</p>
+                            {% endif %}
+                        {% elif answer.question.question_type in 'text_input number_input' %}
+                            <p><strong>Ваш ответ:</strong> {{ sa.answer }}</p>
+                            {% if not answer.is_correct %}
+                                <p class="text-danger"><strong>Правильный ответ:</strong> {{ ca.answer }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p><strong>Ваш ответ (сырой JSON):</strong> {{ sa }}</p>
+                            {% if not answer.is_correct %}
+                                <p class="text-danger"><strong>Правильный ответ (сырой JSON):</strong> {{ ca }}</p>
+                            {% endif %}
+                        {% endif %}
+                        {% endwith %}
+
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="mt-4">
+                    <a href="{% url 'test_list' %}" class="btn btn-primary">Вернуться к списку тестов</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
