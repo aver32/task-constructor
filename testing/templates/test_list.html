@@ -1,0 +1,51 @@
+а{% extends 'base.html' %}
+
+{% block title %}Доступные тесты{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">Доступные тесты для стажёров</h1>
+        <p class="lead">Выберите тест, чтобы начать прохождение</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for test in tests %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card test-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ test.title }}</h5>
+                <p class="card-text">{{ test.description|truncatewords:20 }}</p>
+
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <strong>Начало:</strong> {{ test.start_date|date:"d.m.Y H:i" }}<br>
+                        <strong>Окончание:</strong> {{ test.end_date|date:"d.m.Y H:i" }}<br>
+                        <strong>Проходной балл:</strong> {{ test.passing_threshold }}%
+                    </small>
+                </div>
+
+                {% if test.is_available %}
+                    <span class="badge bg-success">Доступен</span>
+                {% else %}
+                    <span class="badge bg-secondary">Недоступен</span>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'test_detail' test.access_link %}" class="btn btn-primary w-100">
+                    Пройти тест
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4>Нет доступных тестов</h4>
+            <p>В данный момент нет активных тестов. Пожалуйста, зайдите позже.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
