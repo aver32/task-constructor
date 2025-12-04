@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Вопросы: {{ test.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Вопросы теста: {{ test.title }}</h3>
+
+    <div class="mb-3">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="mb-3">
+                {{ form.question_text.label_tag }}
+                {{ form.question_text }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.question_type.label_tag }}
+                {{ form.question_type }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.points.label_tag }}
+                {{ form.points }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.order_number.label_tag }}
+                {{ form.order_number }}
+            </div>
+
+            {% if form.option_1 %}
+            <h5>Варианты ответов</h5>
+            <div class="mb-2">{{ form.option_1.label_tag }} {{ form.option_1 }}</div>
+            <div class="mb-2">{{ form.option_2.label_tag }} {{ form.option_2 }}</div>
+            <div class="mb-2">{{ form.option_3.label_tag }} {{ form.option_3 }}</div>
+            <div class="mb-2">{{ form.option_4.label_tag }} {{ form.option_4 }}</div>
+            <div class="mb-2">{{ form.correct_option.label_tag }} {{ form.correct_option }}</div>
+            {% endif %}
+
+            {% if form.correct_text %}
+            <h5>Правильный ответ (для текстового/числового ввода)</h5>
+            <div class="mb-2">{{ form.correct_text.label_tag }} {{ form.correct_text }}</div>
+            {% endif %}
+
+            <button class="btn btn-primary mt-3" type="submit">Добавить вопрос</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <h4>Список текущих вопросов</h4>
+    {% if questions %}
+        <ul class="list-group">
+            {% for q in questions %}
+            <li class="list-group-item">
+                <strong>{{ q.order_number }}. {{ q.question_text }}</strong>
+                ({{ q.get_question_type_display }}, {{ q.points }} баллов)
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Вопросы пока не добавлены.</p>
+    {% endif %}
+</div>
+{% endblock %}

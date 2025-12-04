@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Попытка: {{ attempt.student.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Попытка: {{ attempt.student.name }} — {{ attempt.test.title }}</h3>
+  <p>Email: {{ attempt.student.email }}</p>
+  <p>Время: {{ attempt.start_time }} — {{ attempt.end_time }}</p>
+  <p>Баллы: {{ attempt.score|floatformat:2 }}% — {% if attempt.passed %}<strong class="text-success">Пройдено</strong>{% else %}<strong class="text-danger">Не пройдено</strong>{% endif %}</p>
+
+  <hr>
+  <h5>Ответы:</h5>
+  <div class="list-group">
+    {% for ans in answers %}
+      <div class="list-group-item">
+        <h6>{{ ans.question.order_number }}. {{ ans.question.question_text }}</h6>
+        <p>Ответ студента: <code>{{ ans.student_answer }}</code></p>
+        <p>Правильно: {% if ans.is_correct %}<span class="text-success">Да</span>{% else %}<span class="text-danger">Нет</span>{% endif %}</p>
+        <p>Баллы: {{ ans.points_earned }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

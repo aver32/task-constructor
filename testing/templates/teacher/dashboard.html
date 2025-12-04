@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Панель преподавателя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Панель преподавателя</h2>
+  <p>Добро пожаловать, {{ user.get_full_name|default:user.username }}</p>
+
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h5>Тестов создано</h5>
+        <p class="display-6">{{ tests_count }}</p>
+        <a href="{% url 'testing:teacher_tests' %}" class="stretched-link">Управление тестами</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h5>Пройдено попыток</h5>
+        <p class="display-6">{{ attempts_count }}</p>
+        <a href="{% url 'testing:teacher_tests' %}" class="stretched-link">Посмотреть результаты</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="{% url 'testing:create_test' %}" class="btn btn-primary">Создать новый тест</a>
+  </div>
+</div>
+{% endblock %}

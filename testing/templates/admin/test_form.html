@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Редактирование теста{% else %}Создание теста{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>{% if is_edit %}Редактирование теста{% else %}Создание теста{% endif %}</h3>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="mb-3">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="text-danger">{{ field.errors }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-success" type="submit">{% if is_edit %}Сохранить{% else %}Создать{% endif %}</button>
+    <a href="{% url 'testing:teacher_tests' %}" class="btn btn-secondary">Отмена</a>
+  </form>
+</div>
+{% endblock %}
