@@ -68,14 +68,11 @@ def test_detail(request, access_link):
 
 
 def take_test(request, attempt_id):
-    """Прохождение теста"""
     attempt = get_object_or_404(Attempt, id=attempt_id)
 
-    # Проверка, что тест еще не завершен
     if attempt.end_time:
         return redirect('testing:test_result', attempt_id=attempt.id)
 
-    # Проверка что попытку создал тот же студент, который в сессии (минимальный защита)
     if 'last_attempt_student_email' in request.session:
         if request.session['last_attempt_student_email'] != attempt.student.email:
             return HttpResponseForbidden('Эта попытка не для текущего пользователя сессии.')
@@ -83,27 +80,32 @@ def take_test(request, attempt_id):
     questions = attempt.test.questions.all().order_by('order_number')
 
     if request.method == 'POST':
-        # Обработка ответов
+
         for question in questions:
             field_name = f'question_{question.id}'
 
+            # ----- ОДИН ВЫБОР -----
             if question.question_type == 'single_choice':
                 answer_data = {'answer': request.POST.get(field_name)}
 
+            # ----- МНОЖЕСТВЕННЫЙ -----
             elif question.question_type == 'multiple_choice':
                 answer_data = {'answers': request.POST.getlist(field_name)}
 
+            # ----- ТЕКСТ / ЧИСЛО -----
             elif question.question_type in ['text_input', 'number_input']:
                 answer_data = {'answer': request.POST.get(field_name, '')}
 
+            # ----- НОВЫЙ ТИП: СООТНЕСЕНИЕ -----
             elif question.question_type == 'matching':
                 pairs = {}
-                for key in request.POST:
-                    if key.startswith(f'match_{question.id}_'):
-                        item_id = key.split('_')[-1]
-                        pairs[item_id] = request.POST.get(key)
+                for left in question.options.get('left_items', []):
+                    left_id = left['id']
+                    key = f"match_{question.id}_{left_id}"
+                    pairs[left_id] = request.POST.get(key, '').strip().upper()
                 answer_data = {'pairs': pairs}
 
+            # ----- УПОРЯДОЧИВАНИЕ (если будет) -----
             elif question.question_type == 'ordering':
                 order = request.POST.getlist(f'order_{question.id}')
                 answer_data = {'order': order}
@@ -111,7 +113,6 @@ def take_test(request, attempt_id):
             else:
                 answer_data = {'answer': request.POST.get(field_name, '')}
 
-            # Создаем и проверяем ответ
             answer = Answer.objects.create(
                 attempt=attempt,
                 question=question,
@@ -119,17 +120,15 @@ def take_test(request, attempt_id):
             )
             answer.check_answer()
 
-        # Подсчитываем результат
         attempt.calculate_score()
-
         return redirect('testing:test_result', attempt_id=attempt.id)
 
-    context = {
+    return render(request, 'take_test.html', {
         'attempt': attempt,
         'test': attempt.test,
         'questions': questions,
-    }
-    return render(request, 'take_test.html', context)
+    })
+
 
 
 def test_result(request, attempt_id):
@@ -230,9 +229,13 @@ def edit_test(request, test_id):
 def add_questions(request, test_id):
     """Добавление вопросов к тесту — только автор теста."""
     test = get_object_or_404(Test, id=test_id, creator=request.user)
+    questions = test.questions.all()
+
+    # Вычисляем следующий номер вопроса для отображения
+    next_order = questions.count() + 1
 
     if request.method == 'POST':
-        form = QuestionForm(request.POST)
+        form = QuestionForm(request.POST, test=test)
         if form.is_valid():
             question = form.save(commit=False)
             question.test = test
@@ -240,13 +243,13 @@ def add_questions(request, test_id):
             messages.success(request, 'Вопрос добавлен')
             return redirect('testing:add_questions', test_id=test.id)
     else:
-        form = QuestionForm()
+        form = QuestionForm(test=test)
 
-    questions = test.questions.all()
     context = {
         'test': test,
         'form': form,
         'questions': questions,
+        'next_order': next_order,
     }
     return render(request, 'admin/question_form.html', context)
 

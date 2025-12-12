@@ -33,7 +33,7 @@ test = Test.objects.create(
     end_date=timezone.now() + timedelta(days=90),
     passing_threshold=70.0,
     is_active=True,
-    notification_type='account'
+    notification_type=list
 )
 
 print(f"✓ Создан тест: {test.title}")

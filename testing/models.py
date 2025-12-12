@@ -27,7 +27,6 @@ class Test(models.Model):
         ('account', 'Личный кабинет'),
         ('email', 'Email'),
         ('telegram', 'Telegram'),
-        ('all', 'Все способы'),
     ]
 
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tests')
@@ -38,7 +37,12 @@ class Test(models.Model):
     passing_threshold = models.FloatField(verbose_name='Проходной балл (%)', default=70.0)
     is_active = models.BooleanField(default=True, verbose_name='Активен')
     access_link = models.CharField(max_length=255, unique=True, blank=True)
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_CHOICES, default='account')
+    notification_type = models.JSONField(
+        verbose_name='Типы уведомлений',
+        default=list,
+        blank=True,
+        null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -72,6 +76,7 @@ class Question(models.Model):
         ('number_input', 'Ввод числа'),
         ('matching', 'Соотнесение'),
         ('ordering', 'Упорядочивание'),
+        ('matrix', 'Матричный вопрос'),  # НОВЫЙ ТИП
     ]
 
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions')
@@ -189,7 +194,37 @@ class Answer(models.Model):
         elif question.question_type == 'ordering':
             self.is_correct = student.get('order') == correct.get('order')
 
-        # Начисление баллов
+        elif question.question_type == 'matrix':
+            # Проверка матричного ответа
+            student_matrix = student.get('matrix', {})
+            correct_matrix = correct.get('matrix', {})
+
+            # Подсчет правильных ответов
+            total_cells = 0
+            correct_cells = 0
+
+            for row_id in correct_matrix.keys():
+                for col_id in correct_matrix[row_id].keys():
+                    total_cells += 1
+                    student_value = student_matrix.get(row_id, {}).get(col_id)
+                    correct_value = correct_matrix[row_id][col_id]
+
+                    if student_value == correct_value:
+                        correct_cells += 1
+
+            # Полное совпадение = правильный ответ
+            self.is_correct = (total_cells > 0 and correct_cells == total_cells)
+
+            # Частичные баллы за матричные вопросы
+            if total_cells > 0:
+                self.points_earned = question.points * (correct_cells / total_cells)
+            else:
+                self.points_earned = 0
+
+            self.save()
+            return  # Выходим, чтобы не перезаписать points_earned ниже
+
+        # Начисление баллов для остальных типов
         if self.is_correct:
             self.points_earned = question.points
         else:

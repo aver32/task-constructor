@@ -19,12 +19,13 @@
                         <h5>Вопрос {{ question.order_number }} ({{ question.points }} балл{% if question.points > 1 %}а{% endif %})</h5>
                         <p class="lead">{{ question.question_text }}</p>
 
+                        {# ----- ОДИН ВАРИАНТ ----- #}
                         {% if question.question_type == 'single_choice' %}
                             {% for option in question.options.options %}
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" 
-                                       name="question_{{ question.id }}" 
-                                       value="{{ option.id }}" 
+                                <input class="form-check-input" type="radio"
+                                       name="question_{{ question.id }}"
+                                       value="{{ option.id }}"
                                        id="q{{ question.id }}_opt{{ option.id }}" required>
                                 <label class="form-check-label" for="q{{ question.id }}_opt{{ option.id }}">
                                     {{ option.text }}
@@ -32,12 +33,13 @@
                             </div>
                             {% endfor %}
 
+                        {# ----- МНОЖЕСТВЕННЫЙ ВЫБОР ----- #}
                         {% elif question.question_type == 'multiple_choice' %}
                             {% for option in question.options.options %}
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" 
-                                       name="question_{{ question.id }}" 
-                                       value="{{ option.id }}" 
+                                <input class="form-check-input" type="checkbox"
+                                       name="question_{{ question.id }}"
+                                       value="{{ option.id }}"
                                        id="q{{ question.id }}_opt{{ option.id }}">
                                 <label class="form-check-label" for="q{{ question.id }}_opt{{ option.id }}">
                                     {{ option.text }}
@@ -45,16 +47,49 @@
                             </div>
                             {% endfor %}
 
+                        {# ----- ТЕКСТОВЫЙ ОТВЕТ ----- #}
                         {% elif question.question_type == 'text_input' %}
-                            <input type="text" class="form-control" 
-                                   name="question_{{ question.id }}" 
+                            <input type="text" class="form-control"
+                                   name="question_{{ question.id }}"
                                    placeholder="Введите ответ" required>
 
+                        {# ----- ЧИСЛОВОЙ ОТВЕТ ----- #}
                         {% elif question.question_type == 'number_input' %}
-                            <input type="number" class="form-control" 
-                                   name="question_{{ question.id }}" 
+                            <input type="number" class="form-control"
+                                   name="question_{{ question.id }}"
                                    placeholder="Введите число" required>
 
+                        {# ----- НОВЫЙ ТИП: СООТНЕСЕНИЕ ----- #}
+                        {% elif question.question_type == 'matching' %}
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <h6>Утверждения</h6>
+                                    {% for left in question.options.left_items %}
+                                        <p><strong>{{ left.id }}.</strong> {{ left.text }}</p>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-md-5">
+                                    <h6>Варианты</h6>
+                                    {% for right in question.options.right_items %}
+                                        <p><strong>{{ right.id }}.</strong> {{ right.text }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <h6 class="mt-3">Ваши соответствия</h6>
+                            {% for left in question.options.left_items %}
+                                <div class="mb-2">
+                                    <label class="form-label">Ответ для {{ left.id }}</label>
+                                    <select class="form-select"
+                                            name="match_{{ question.id }}_{{ left.id }}" required>
+                                        <option value="">Выберите букву...</option>
+                                        {% for right in question.options.right_items %}
+                                            <option value="{{ right.id }}">{{ right.id }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endfor %}
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -66,12 +101,12 @@
                     <button type="submit" class="btn btn-primary btn-lg w-100">
                         Отправить ответы
                     </button>
+
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
