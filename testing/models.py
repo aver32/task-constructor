@@ -9,7 +9,7 @@ class User(AbstractUser):
     """Пользователи системы (организаторы)"""
     ROLE_CHOICES = [
         ('admin', 'Администратор'),
-        ('teacher', 'Преподаватель'),
+        ('teacher', 'Организатор'),
         ('student', 'Студент'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='teacher')
@@ -74,14 +74,15 @@ class Question(models.Model):
         ('multiple_choice', 'Множественный выбор'),
         ('text_input', 'Ввод текста'),
         ('number_input', 'Ввод числа'),
-        ('matching', 'Соотнесение'),
-        ('ordering', 'Упорядочивание'),
-        ('matrix', 'Матричный вопрос'),  # НОВЫЙ ТИП
+        # ('matching', 'Соотнесение'),
+        # ('ordering', 'Упорядочивание'),
+        # ('matrix', 'Матричный вопрос'),  # НОВЫЙ ТИП
     ]
 
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField(verbose_name='Текст вопроса')
-    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='single_choice')
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='single_choice',
+                                     verbose_name='Тип вопроса')
     points = models.IntegerField(default=1, verbose_name='Баллы за вопрос')
     options = models.JSONField(default=dict, verbose_name='Варианты ответов')
     correct_answer = models.JSONField(default=dict, verbose_name='Правильный ответ')

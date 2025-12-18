@@ -292,9 +292,20 @@ def attempt_detail(request, attempt_id):
     attempt = get_object_or_404(Attempt, id=attempt_id, test__creator=request.user)
     answers = attempt.answers.select_related('question').all()
     for answer in answers:
-        print(answer.an)
-        answer.student_answer = str(answer.student_answer)
-    print(answers)
+        options = answer.question.options
+        if options:
+            list_results = []
+            options_answers = options.get('options', {})
+            student_answer_index = answer.student_answer.get('answer', '')
+            student_answer_indices = answer.student_answer.get('answers', [])
+            for index in student_answer_indices:
+                list_results.append(options_answers[int(index) - 1].get('text', ''))
+            result = ', '.join(list_results)
+            if student_answer_index:
+                result = options_answers[int(student_answer_index) - 1].get('text', '')
+            answer.student_answer = result
+        else:
+            answer.student_answer = answer.student_answer.get('answer', '')
     return render(request, 'teacher/attempt_detail.html', {
         'attempt': attempt,
         'answers': answers,
