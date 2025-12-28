@@ -221,8 +221,9 @@ class Answer(models.Model):
                     # Для множественного выбора считаем все правильные ответы в строке
 
                     correct_cols_in_row = set(correct_matrix[row_id].keys())
-
+                    sorted_correct_cols_in_row = set(sorted(correct_cols_in_row))
                     student_cols_in_row = set(student_matrix.get(row_id, {}).keys())
+                    sorted_student_cols_in_row = set(sorted(student_cols_in_row))
 
                     print(correct_cols_in_row)
                     student_cols_in_row = set([", ".join(student_cols_in_row)])
@@ -233,6 +234,7 @@ class Answer(models.Model):
                     # Считаем пересечение (правильно выбранные)
 
                     correct_cells += len(correct_cols_in_row & student_cols_in_row)
+                    print(correct_cells)
 
                     # Вычитаем неправильно выбранные (штраф за лишние)
 

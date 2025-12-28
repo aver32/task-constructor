@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Регистрация преподавателя{% endblock %}
+{% block title %}Регистрация организатора{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-  <h3>Регистрация преподавателя</h3>
+  <h3>Регистрация организатора</h3>
   <form method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}
