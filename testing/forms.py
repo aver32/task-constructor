@@ -72,6 +72,23 @@ class QuestionForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'num_options'}),
         label="Количество вариантов ответа"
     )
+    num_matrix_rows = forms.IntegerField(
+        required=False,
+        initial=3,
+        min_value=1,
+        max_value=5,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'num_matrix_rows'}),
+        label="Количество строк (утверждений)"
+    )
+
+    num_matrix_cols = forms.IntegerField(
+        required=False,
+        initial=4,
+        min_value=2,
+        max_value=6,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'num_matrix_cols'}),
+        label="Количество столбцов (вариантов)"
+    )
     matrix_row_1 = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}),
                                    label="Строка 1")
     matrix_row_2 = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}),
@@ -92,6 +109,7 @@ class QuestionForm(forms.ModelForm):
     matrix_col_F = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}), label="Е")
 
     # Правильные ответы для каждой строки (какая колонка правильная)
+    matrix_answer_placeholder = 'A, Б, В, Г, Д или Е'
     matrix_answer_1 = forms.CharField(required=False, widget=forms.TextInput(
         attrs={'class': 'form-control', 'placeholder': 'A, Б, В, Г, Д или Е'}), label="Ответ для строки 1")
     matrix_answer_2 = forms.CharField(required=False, widget=forms.TextInput(
@@ -178,9 +196,8 @@ class QuestionForm(forms.ModelForm):
 
         # Автоматически определяем порядковый номер
         if self.test:
-            max_order = Question.objects.filter(test=self.test).aggregate(models.
-                Max('order_number')
-            )['order_number__max']
+            max_order = Question.objects.filter(test=self.test).aggregate(models.Max('order_number'))[
+                'order_number__max']
             question.order_number = (max_order or 0) + 1
 
         # Формируем options и correct_answer в зависимости от типа вопроса
@@ -213,6 +230,61 @@ class QuestionForm(forms.ModelForm):
             correct_text = self.cleaned_data.get('correct_text', '')
             question.correct_answer = {'answer': correct_text}
             question.options = {}
+
+        # ЗАМЕНИТЕ ВЕСЬ БЛОК elif question.question_type == 'matrix':
+        elif question.question_type == 'matrix':
+            rows = []
+            cols = []
+            correct_matrix = {}
+
+            # Получаем количество строк и столбцов
+            num_rows = self.cleaned_data.get('num_matrix_rows', 3)
+            num_cols = self.cleaned_data.get('num_matrix_cols', 4)
+            answer_type = self.cleaned_data.get('matrix_answer_type', 'single')  # ДОБАВЛЕНО
+
+            # Собираем строки (row) - только те, которые заполнены
+            for i in range(1, 6):  # максимум 5 строк
+                if i <= num_rows:
+                    row_text = self.cleaned_data.get(f'matrix_row_{i}')
+                    if row_text:
+                        rows.append({'id': str(i), 'text': row_text})
+
+            # Собираем колонки (column) - только те, которые заполнены
+            letters = ['A', 'B', 'C', 'D', 'E', 'F']
+            for idx, letter in enumerate(letters):
+                if idx < num_cols:
+                    col_text = self.cleaned_data.get(f'matrix_col_{letter}')
+                    if col_text:
+                        cols.append({'id': letter, 'text': col_text})
+
+            # Собираем правильные ответы
+            for i in range(1, 6):
+                if i <= num_rows:
+                    row_text = self.cleaned_data.get(f'matrix_row_{i}')
+                    if row_text:
+                        answer = self.cleaned_data.get(f'matrix_answer_{i}', '').strip().upper()
+                        if answer:
+                            if str(i) not in correct_matrix:
+                                correct_matrix[str(i)] = {}
+
+                            # ИЗМЕНЕНО: поддержка множественных ответов
+                            if answer_type == 'multiple':
+                                # Разделяем по запятой и обрабатываем каждый ответ
+                                answers = [a.strip() for a in answer.split(',') if a.strip()]
+                                for ans in answers:
+                                    correct_matrix[str(i)][ans] = True
+                            else:
+                                # Один ответ
+                                correct_matrix[str(i)][answer] = True
+
+            question.options = {
+                'rows': rows,
+                'cols': cols,
+                'answer_type': answer_type  # ДОБАВЛЕНО
+            }
+            question.correct_answer = {
+                'matrix': correct_matrix
+            }
 
         if commit:
             question.save()

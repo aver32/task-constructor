@@ -176,6 +176,84 @@
                 </div>
             </div>
 
+            <!-- Блок для матричного вопроса -->
+            <div id="matrixBlock" style="display:none;">
+                <h5>Настройка матричного вопроса</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            {{ form.num_matrix_rows.label_tag }}
+                            {{ form.num_matrix_rows }}
+                            <small class="form-text text-muted">От 1 до 5 строк</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            {{ form.num_matrix_cols.label_tag }}
+                            {{ form.num_matrix_cols }}
+                            <small class="form-text text-muted">От 2 до 6 столбцов (A-F)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ДОБАВЬТЕ ЭТОТ БЛОК -->
+                <div class="mb-3">
+                    <label class="form-label">{{ form.matrix_answer_type.label }}</label>
+                    <div>
+                        {% for radio in form.matrix_answer_type %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <small class="form-text text-muted">
+                        <strong>Один ответ:</strong> студент выбирает только одну ячейку в строке (радиокнопки)<br>
+                        <strong>Несколько ответов:</strong> студент может выбрать несколько ячеек в строке (чекбоксы)
+                    </small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Строки (утверждения)</h6>
+                        <div class="mb-2 matrix-row-field" data-row="1">{{ form.matrix_row_1.label_tag }} {{ form.matrix_row_1 }}</div>
+                        <div class="mb-2 matrix-row-field" data-row="2">{{ form.matrix_row_2.label_tag }} {{ form.matrix_row_2 }}</div>
+                        <div class="mb-2 matrix-row-field" data-row="3">{{ form.matrix_row_3.label_tag }} {{ form.matrix_row_3 }}</div>
+                        <div class="mb-2 matrix-row-field" data-row="4">{{ form.matrix_row_4.label_tag }} {{ form.matrix_row_4 }}</div>
+                        <div class="mb-2 matrix-row-field" data-row="5">{{ form.matrix_row_5.label_tag }} {{ form.matrix_row_5 }}</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6>Колонки (варианты ответов)</h6>
+                        <div class="mb-2 matrix-col-field" data-col="1">{{ form.matrix_col_A.label_tag }} {{ form.matrix_col_A }}</div>
+                        <div class="mb-2 matrix-col-field" data-col="2">{{ form.matrix_col_B.label_tag }} {{ form.matrix_col_B }}</div>
+                        <div class="mb-2 matrix-col-field" data-col="3">{{ form.matrix_col_C.label_tag }} {{ form.matrix_col_C }}</div>
+                        <div class="mb-2 matrix-col-field" data-col="4">{{ form.matrix_col_D.label_tag }} {{ form.matrix_col_D }}</div>
+                        <div class="mb-2 matrix-col-field" data-col="5">{{ form.matrix_col_E.label_tag }} {{ form.matrix_col_E }}</div>
+                        <div class="mb-2 matrix-col-field" data-col="6">{{ form.matrix_col_F.label_tag }} {{ form.matrix_col_F }}</div>
+                    </div>
+                </div>
+
+                <h6 class="mt-3">Правильные ответы</h6>
+                <!-- ОБНОВИТЕ ТЕКСТ ПОДСКАЗКИ -->
+                <small class="form-text text-muted d-block mb-2">
+                    <strong>Для одного ответа:</strong> укажите одну букву (например: A)<br>
+                    <strong>Для множественного:</strong> укажите буквы через запятую (например: A, B, D)
+                </small>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2 matrix-answer-field" data-answer="1">{{ form.matrix_answer_1.label_tag }} {{ form.matrix_answer_1 }}</div>
+                        <div class="mb-2 matrix-answer-field" data-answer="2">{{ form.matrix_answer_2.label_tag }} {{ form.matrix_answer_2 }}</div>
+                        <div class="mb-2 matrix-answer-field" data-answer="3">{{ form.matrix_answer_3.label_tag }} {{ form.matrix_answer_3 }}</div>
+                        <div class="mb-2 matrix-answer-field" data-answer="4">{{ form.matrix_answer_4.label_tag }} {{ form.matrix_answer_4 }}</div>
+                        <div class="mb-2 matrix-answer-field" data-answer="5">{{ form.matrix_answer_5.label_tag }} {{ form.matrix_answer_5 }}</div>
+                    </div>
+                </div>
+            </div>
+
             <button class="btn btn-primary mt-3" type="submit">Добавить вопрос</button>
         </form>
     </div>
@@ -201,10 +279,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     const questionType = document.querySelector('select[name="question_type"]');
     const numOptionsInput = document.querySelector('#num_options');
+    const numMatrixRowsInput = document.querySelector('#num_matrix_rows');  // ДОБАВЬТЕ
+    const numMatrixColsInput = document.querySelector('#num_matrix_cols');  // ДОБАВЬТЕ
     const optionsBlock = document.querySelector('#optionsBlock');
     const textBlock = document.querySelector('#textBlock');
     const matchingBlock = document.querySelector('#matchingBlock');
+    const matrixBlock = document.querySelector('#matrixBlock');
     const optionRows = document.querySelectorAll('.option-row');
+    const matrixRowFields = document.querySelectorAll('.matrix-row-field');  // ДОБАВЬТЕ
+    const matrixColFields = document.querySelectorAll('.matrix-col-field');  // ДОБАВЬТЕ
+    const matrixAnswerFields = document.querySelectorAll('.matrix-answer-field');  // ДОБАВЬТЕ
 
     function updateFormFields() {
         const type = questionType.value;
@@ -213,19 +297,29 @@ document.addEventListener('DOMContentLoaded', function() {
             optionsBlock.style.display = 'block';
             textBlock.style.display = 'none';
             matchingBlock.style.display = 'none';
+            matrixBlock.style.display = 'none';
             updateVisibleOptions();
         } else if (type === 'text_input' || type === 'number_input') {
             optionsBlock.style.display = 'none';
             textBlock.style.display = 'block';
             matchingBlock.style.display = 'none';
+            matrixBlock.style.display = 'none';
         } else if (type === 'matching') {
             optionsBlock.style.display = 'none';
             textBlock.style.display = 'none';
             matchingBlock.style.display = 'block';
+            matrixBlock.style.display = 'none';
+        } else if (type === 'matrix') {
+            optionsBlock.style.display = 'none';
+            textBlock.style.display = 'none';
+            matchingBlock.style.display = 'none';
+            matrixBlock.style.display = 'block';
+            updateVisibleMatrixFields();  // ДОБАВЬТЕ
         } else {
             optionsBlock.style.display = 'none';
             textBlock.style.display = 'none';
             matchingBlock.style.display = 'none';
+            matrixBlock.style.display = 'none';
         }
     }
 
@@ -242,8 +336,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ДОБАВЬТЕ ЭТУ НОВУЮ ФУНКЦИЮ
+    function updateVisibleMatrixFields() {
+        const numRows = parseInt(numMatrixRowsInput.value) || 3;
+        const numCols = parseInt(numMatrixColsInput.value) || 4;
+
+        // Показываем/скрываем поля строк
+        matrixRowFields.forEach((field) => {
+            const rowNum = parseInt(field.dataset.row);
+            if (rowNum <= numRows) {
+                field.style.display = 'block';
+            } else {
+                field.style.display = 'none';
+            }
+        });
+
+        // Показываем/скрываем поля столбцов
+        matrixColFields.forEach((field) => {
+            const colNum = parseInt(field.dataset.col);
+            if (colNum <= numCols) {
+                field.style.display = 'block';
+            } else {
+                field.style.display = 'none';
+            }
+        });
+
+        // Показываем/скрываем поля ответов
+        matrixAnswerFields.forEach((field) => {
+            const answerNum = parseInt(field.dataset.answer);
+            if (answerNum <= numRows) {
+                field.style.display = 'block';
+            } else {
+                field.style.display = 'none';
+            }
+        });
+    }
+
     questionType.addEventListener('change', updateFormFields);
     numOptionsInput.addEventListener('input', updateVisibleOptions);
+    numMatrixRowsInput.addEventListener('input', updateVisibleMatrixFields);  // ДОБАВЬТЕ
+    numMatrixColsInput.addEventListener('input', updateVisibleMatrixFields);  // ДОБАВЬТЕ
 
     // Инициализация при загрузке
     updateFormFields();

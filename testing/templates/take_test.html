@@ -90,7 +90,60 @@
                                     </select>
                                 </div>
                             {% endfor %}
+
+                            {# ----- МАТРИЧНЫЙ ВОПРОС ----- #}
+{% elif question.question_type == 'matrix' %}
+    {% with answer_type=question.options.answer_type %}
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for col in question.options.cols %}
+                        <th class="text-center">{{ col.id }}<br><small>{{ col.text }}</small></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in question.options.rows %}
+                <tr>
+                    <td><strong>{{ row.id }}.</strong> {{ row.text }}</td>
+                    {% for col in question.options.cols %}
+                    <td class="text-center">
+                        {% if answer_type == 'multiple' %}
+                            {# Множественный выбор - чекбоксы #}
+                            <input class="form-check-input" type="checkbox"
+                                   name="matrix_{{ question.id }}_{{ row.id }}"
+                                   value="{{ col.id }}"
+                                   id="matrix_{{ question.id }}_{{ row.id }}_{{ col.id }}">
+                        {% else %}
+                            {# Одиночный выбор - радиокнопки #}
+                            <input class="form-check-input" type="radio"
+                                   name="matrix_{{ question.id }}_{{ row.id }}"
+                                   value="{{ col.id }}"
+                                   id="matrix_{{ question.id }}_{{ row.id }}_{{ col.id }}" required>
                         {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if answer_type == 'multiple' %}
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> Вы можете выбрать несколько вариантов в каждой строке
+            </small>
+        {% else %}
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> Выберите один вариант для каждой строки
+            </small>
+        {% endif %}
+    </div>
+    {% endwith %}
+                        {% endif %}
+
+
                     </div>
                     {% endfor %}
 

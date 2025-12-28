@@ -78,6 +78,26 @@ def take_test(request, attempt_id):
             return HttpResponseForbidden('Эта попытка не для текущего пользователя сессии.')
 
     questions = attempt.test.questions.all().order_by('order_number')
+    translate_dict = {
+        "A": "А",
+        "B": "Б",
+        "C": "В",
+        "D": "Г",
+        "E": "Д",
+        "F": "Е"
+    }
+    for question in questions:
+        for col in question.options.get("cols", []):
+            for k, v in translate_dict.items():
+                col["id"] = col["id"].replace(k, v)
+
+        correct = question.correct_answer.get("matrix", {})
+        for k, v in correct.items():
+            for k_1, v_1 in v.items():
+                if "," in k_1:
+                    question.options["answer_type"] = "multiple"
+                    #answer_type = question.options.get('answer_type', 'single')
+        print(question.options)
 
     if request.method == 'POST':
 
@@ -109,6 +129,47 @@ def take_test(request, attempt_id):
             elif question.question_type == 'ordering':
                 order = request.POST.getlist(f'order_{question.id}')
                 answer_data = {'order': order}
+
+            # ----- МАТРИЧНЫЙ ВОПРОС -----
+            elif question.question_type == 'matrix':
+                translate_dict = {
+                    "A": "А",
+                    "B": "Б",
+                    "C": "В",
+                    "D": "Г",
+                    "E": "Д",
+                    "F": "Е"
+                }
+                matrix = {}
+                answer_type = question.options.get('answer_type', 'single')
+
+                # Собираем ответы по каждой строке
+                for row in question.options.get('rows', []):
+                    row_id = row['id']
+
+                    if answer_type == 'multiple':
+                        # ДОБАВЛЕНО: для множественного выбора используем getlist
+                        field_name = f'matrix_{question.id}_{row_id}'
+                        selected_cols = request.POST.getlist(field_name)
+                        if selected_cols:
+                            if row_id not in matrix:
+                                matrix[row_id] = {}
+                            for col in selected_cols:
+                                for k, v in translate_dict.items():
+                                    col = col.replace(k, v)
+                                matrix[row_id][col] = True
+                    else:
+                        # Для одиночного выбора (старая логика)
+                        field_name = f'matrix_{question.id}_{row_id}'
+                        selected_col = request.POST.get(field_name, '')
+                        for k, v in translate_dict.items():
+                            selected_col = selected_col.replace(k, v)
+                        if selected_col:
+                            if row_id not in matrix:
+                                matrix[row_id] = {}
+                            matrix[row_id][selected_col] = True
+
+                answer_data = {'matrix': matrix}
 
             else:
                 answer_data = {'answer': request.POST.get(field_name, '')}

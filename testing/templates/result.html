@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load matrix_filters %}
+
 
 {% block title %}Результаты теста{% endblock %}
 
@@ -69,6 +71,64 @@
                             {% if not answer.is_correct %}
                                 <p class="text-danger"><strong>Правильный ответ:</strong> {{ ca.answer }}</p>
                             {% endif %}
+                        {% elif answer.question.question_type == 'matrix' %}
+                            <div class="table-responsive">
+                                {% with answer_type=answer.question.options.answer_type student_matrix=sa.matrix|default_dict correct_matrix=ca.matrix|default_dict %}
+                                <p><strong>Тип ответа:</strong>
+                                    {% if answer_type == 'multiple' %}
+                                        Множественный выбор
+                                    {% else %}
+                                        Одиночный выбор
+                                    {% endif %}
+                                </p>
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Строка</th>
+                                            <th>Ваш ответ</th>
+                                            <th>Правильный ответ</th>
+                                            <th>Статус</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in answer.question.options.rows %}
+                                        <tr>
+                                            <td>{{ row.id }}. {{ row.text }}</td>
+                                            <td>
+                                                {% with student_row=student_matrix|lookup:row.id %}
+                                                    {% if student_row %}
+                                                        {{ student_row|dict_keys|join:", " }}
+                                                    {% else %}
+                                                        <span class="text-muted">Нет ответа</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with correct_row=correct_matrix|lookup:row.id %}
+                                                    {% if correct_row %}
+                                                        {{ correct_row|dict_keys|join:", " }}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with student_row=student_matrix|lookup:row.id correct_row=correct_matrix|lookup:row.id %}
+                                                    {% with student_keys=student_row|dict_keys correct_keys=correct_row|dict_keys %}
+                                                        {% if student_keys|lists_equal:correct_keys %}
+                                                            <span class="badge bg-success">✓</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">✗</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% endwith %}
+                            </div>
                         {% else %}
                             <p><strong>Ваш ответ (сырой JSON):</strong> {{ sa }}</p>
                             {% if not answer.is_correct %}

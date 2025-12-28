@@ -74,9 +74,9 @@ class Question(models.Model):
         ('multiple_choice', 'Множественный выбор'),
         ('text_input', 'Ввод текста'),
         ('number_input', 'Ввод числа'),
-        # ('matching', 'Соотнесение'),
+        ('matching', 'Соотнесение'),
         # ('ordering', 'Упорядочивание'),
-        # ('matrix', 'Матричный вопрос'),  # НОВЫЙ ТИП
+        ('matrix', 'Матричный вопрос'),  # НОВЫЙ ТИП
     ]
 
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions')
@@ -195,34 +195,85 @@ class Answer(models.Model):
         elif question.question_type == 'ordering':
             self.is_correct = student.get('order') == correct.get('order')
 
+
         elif question.question_type == 'matrix':
+
             # Проверка матричного ответа
+
             student_matrix = student.get('matrix', {})
+
             correct_matrix = correct.get('matrix', {})
 
+            answer_type = question.options.get('answer_type', 'single')  # ДОБАВЛЕНО
+
             # Подсчет правильных ответов
+
             total_cells = 0
+
             correct_cells = 0
 
             for row_id in correct_matrix.keys():
-                for col_id in correct_matrix[row_id].keys():
-                    total_cells += 1
-                    student_value = student_matrix.get(row_id, {}).get(col_id)
-                    correct_value = correct_matrix[row_id][col_id]
 
-                    if student_value == correct_value:
-                        correct_cells += 1
+                # ИЗМЕНЕНО: учитываем тип ответа
+
+                if answer_type == 'multiple':
+
+                    # Для множественного выбора считаем все правильные ответы в строке
+
+                    correct_cols_in_row = set(correct_matrix[row_id].keys())
+
+                    student_cols_in_row = set(student_matrix.get(row_id, {}).keys())
+
+                    print(correct_cols_in_row)
+                    student_cols_in_row = set([", ".join(student_cols_in_row)])
+                    print(student_cols_in_row)
+
+                    total_cells += len(correct_cols_in_row)
+
+                    # Считаем пересечение (правильно выбранные)
+
+                    correct_cells += len(correct_cols_in_row & student_cols_in_row)
+
+                    # Вычитаем неправильно выбранные (штраф за лишние)
+
+                    wrong_selections = len(student_cols_in_row - correct_cols_in_row)
+
+                    correct_cells -= wrong_selections
+
+
+                else:
+
+                    # Для одиночного выбора (старая логика)
+
+                    for col_id in correct_matrix[row_id].keys():
+
+                        total_cells += 1
+
+                        student_value = student_matrix.get(row_id, {}).get(col_id)
+
+                        correct_value = correct_matrix[row_id][col_id]
+
+                        if student_value == correct_value:
+                            correct_cells += 1
 
             # Полное совпадение = правильный ответ
+
             self.is_correct = (total_cells > 0 and correct_cells == total_cells)
 
             # Частичные баллы за матричные вопросы
+
             if total_cells > 0:
-                self.points_earned = question.points * (correct_cells / total_cells)
+
+                # Не допускаем отрицательных баллов
+
+                self.points_earned = max(0, question.points * (correct_cells / total_cells))
+
             else:
+
                 self.points_earned = 0
 
             self.save()
+
             return  # Выходим, чтобы не перезаписать points_earned ниже
 
         # Начисление баллов для остальных типов
